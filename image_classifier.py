@@ -29,9 +29,13 @@ start_program_time = time.time()
 
 file_path_to_source_dataset = 'C:/temp/clipped2.tif'
 driver_tiff = gdal.GetDriverByName("GTiff")
+
 source_dataset = gdal.Open(file_path_to_source_dataset)
+
 image = Utils.get_image(source_dataset)
+
 segments = slic(image, n_segments=50000, compactness=0.1, start_label=0)
+
 start_pixel_bypass = time.time()
 segment_ids = np.unique(segments)
 objects, object_ids = Utils.get_objects_and_ids(segment_ids, segments, image)
@@ -43,6 +47,7 @@ start_prediction = time.time()
 predicted = classifier.predict(objects)
 
 segments_copy = np.copy(segments)
+
 for segment_id, point_class in zip(segment_ids, predicted):
     segments_copy[segments_copy == segment_id] = point_class
 
@@ -86,6 +91,7 @@ height = layer.height()
 renderer = layer.renderer()
 provider = layer.dataProvider()
 crs = layer.crs()
+
 pipe = QgsRasterPipe()
 pipe.set(provider.clone())
 pipe.set(renderer.clone())
