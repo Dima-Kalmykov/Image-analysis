@@ -13,37 +13,26 @@ from qgis.core import (QgsRasterLayer,
 
 from utils import Utils
 
-
-def print_duration(message: str, start_time: time) -> None:
-    """
-    Print duration of period, which starts with 'start_time'.
-    :param message: auxiliary message
-    :param start_time: start time for measuring
-    """
-    end_time = time.time()
-    time_result = time.strftime('%M:%S', time.localtime(end_time - start_time))
-    print(message, time_result, end="\n\n")
-
-
 start_program_time = time.time()
 
 file_path_to_source_dataset = 'C:/temp/clipped2.tif'
 driver_tiff = gdal.GetDriverByName("GTiff")
 
 source_dataset = gdal.Open(file_path_to_source_dataset)
-
 image = Utils.get_image(source_dataset)
 
+start_segmentation_time = time.time()
 segments = slic(image, n_segments=50000, compactness=0.1, start_label=0)
+Utils.print_duration("Segmentation done:", start_segmentation_time)
 
-start_pixel_bypass = time.time()
+start_pixel_bypass_time = time.time()
 segment_ids = np.unique(segments)
 objects, object_ids = Utils.get_objects_and_ids(segment_ids, segments, image)
-print_duration("Pixel bypass done:", start_pixel_bypass)
+Utils.print_duration("Pixel bypass done:", start_pixel_bypass_time)
 
 classifier = pickle.load(open('finalized_model.sav', 'rb'))
 
-start_prediction = time.time()
+start_prediction_time = time.time()
 predicted = classifier.predict(objects)
 
 segments_copy = np.copy(segments)
@@ -57,7 +46,7 @@ mask[mask == 0.0] = -1.0
 
 segments_copy = np.multiply(segments_copy, mask)
 segments_copy[segments_copy < 0] = -9999.0
-print_duration("Prediction done:", start_prediction)
+Utils.print_duration("Prediction done:", start_prediction_time)
 
 file_path_to_result = "C:/temp/naip/classified.tif"
 result_dataset = driver_tiff.Create(file_path_to_result, source_dataset.RasterXSize,
@@ -99,5 +88,5 @@ pipe.set(renderer.clone())
 file_writer = QgsRasterFileWriter("C:/temp/naip/classified_res.tif")
 file_writer.writeRaster(pipe, width, height, extent, crs)
 
-print_duration("Total:", start_program_time)
+Utils.print_duration("Total:", start_program_time)
 print("Done!")

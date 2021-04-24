@@ -1,11 +1,26 @@
-import numpy as np
 from scipy import stats
 from osgeo import gdal
 from skimage import exposure
 from typing import List, Tuple
 
+import time
+import numpy as np
+
 
 class Utils:
+
+    @staticmethod
+    def print_duration(message: str, start_time: time) -> None:
+        """
+        Print duration of period, which starts with 'start_time'.
+        :param message: auxiliary message
+        :param start_time: start time for measuring
+        """
+        end_time = time.time()
+        total = end_time - start_time
+        minutes = total // 60
+        seconds = total - minutes * 60
+        print(message, " minutes = ", minutes, ", seconds = ", round(seconds, 4), sep="", end="\n\n")
 
     @staticmethod
     def get_segment_features(pixels_in_segment: np.ndarray) -> List[np.uint8]:

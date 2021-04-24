@@ -7,18 +7,23 @@ from sklearn import svm
 import pickle
 from utils import Utils
 
-file_name = 'C:/temp/clipped.tif'
+start_program_time = time.time()
+
+file_path_to_source_data = 'C:/temp/clipped.tif'
 driver_tiff = gdal.GetDriverByName("GTiff")
-source_dataset = gdal.Open(file_name)
+
+source_dataset = gdal.Open(file_path_to_source_data)
 
 image = Utils.get_image(source_dataset)
 
+start_segmentation_time = time.time()
 segments = slic(image, n_segments=50000, compactness=0.1, start_label=0)
+Utils.print_duration("Segmentation done:", start_segmentation_time)
 
 segment_ids = np.unique(segments)
-print(len(segment_ids))
-
+start_pixel_bypass_time = time.time()
 objects, object_ids = Utils.get_objects_and_ids(segment_ids, segments, image)
+Utils.print_duration("Pixel bypass done:", start_pixel_bypass_time)
 
 train_file_path = "C:/temp/landsat/train.shp"
 train_dataset = ogr.Open(train_file_path)
@@ -29,19 +34,18 @@ driver_mem = gdal.GetDriverByName("MEM")
 target_dataset = driver_mem.Create('', source_dataset.RasterXSize, source_dataset.RasterYSize, 1, gdal.GDT_UInt16)
 target_dataset.SetGeoTransform(source_dataset.GetGeoTransform())
 target_dataset.SetProjection(source_dataset.GetProjection())
+
 options = ["ATTRIBUTE=id"]
 gdal.RasterizeLayer(target_dataset, [1], raster_layer, options=options)
 
 ground_truth = target_dataset.GetRasterBand(1).ReadAsArray()
 classes = np.unique(ground_truth)[1:]
-print('classes values', classes)
 
 segments_per_class = {}
 
 for point_class in classes:
     segments_of_class = segments[ground_truth == point_class]
     segments_per_class[point_class] = set(segments_of_class)
-    print("Training segments for class", point_class, ":", len(segments_of_class))
 
 intersection = set()
 accum = set()
@@ -53,6 +57,7 @@ assert len(intersection) == 0, "Segments represent multiple classes"
 
 train_image = np.copy(segments)
 threshold = train_image.max() + 1
+
 for point_class in classes:
     class_label = threshold + point_class
     for segment_id in segments_per_class[point_class]:
@@ -67,14 +72,14 @@ training_labels = []
 for point_class in classes:
     class_train_object = [value for index, value in enumerate(objects) if
                           segment_ids[index] in segments_per_class[point_class]]
+
     training_labels += [point_class] * len(class_train_object)
     training_objects += class_train_object
-    print("Training objects for class", point_class, ":", len(class_train_object))
 
 classifier = svm.SVC()
 classifier.fit(training_objects, training_labels)
-filename = 'finalized_model.sav'
-pickle.dump(classifier, open(filename, 'wb'))
-# predicted = classifier.predict(objects)
-# print("Fitting random forest classifier")
-# print("Predicting classification")
+
+result_model_file_path = 'finalized_model.sav'
+pickle.dump(classifier, open(result_model_file_path, 'wb'))
+Utils.print_duration("Total:", start_program_time)
+print("Training done!")
