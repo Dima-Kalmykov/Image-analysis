@@ -6,8 +6,8 @@ from skimage.segmentation import slic
 from sklearn import svm
 import pickle
 
-from file_paths import FilePaths
-from utils import Utils
+from utils.file_paths import FilePaths
+from utils.utils import Utils
 
 start_program_time = time.time()
 

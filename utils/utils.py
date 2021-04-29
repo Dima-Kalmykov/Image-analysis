@@ -7,19 +7,20 @@ from typing import List, Tuple
 import time
 import numpy as np
 
-from file_paths import FilePaths
+from utils.file_paths import FilePaths
 
 
 class Utils:
 
     @staticmethod
-    def save_result_as_jpg() -> None:
+    def save_result_as_jpg(file_number) -> None:
         """
         Save '.tif' file as '.jpg'.
         """
         result_path = FilePaths.result_path_with_color
-        out_path = result_path[:-3] + "jpg"
-        image = Image.open(result_path)
+        out_path = result_path + str(file_number) + ".jpg"
+        print(result_path)
+        image = Image.open(result_path + str(file_number) + ".tif")
         image.thumbnail(image.size)
         rgb_image = image.convert('RGB')
         rgb_image.save(out_path, "JPEG", quiality=100)
