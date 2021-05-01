@@ -1,16 +1,15 @@
+import base64
+import io
 import os
 from multiprocessing import Value
 from typing import Any
 
+from PIL import Image
+from flask import Flask, render_template
 from flask import request, flash, redirect
 from werkzeug.utils import secure_filename
 
-from classifier.classifier import ImageClassifier
-from flask import Flask, render_template
-from PIL import Image
-import base64
-import io
-
+from classifier.classifier_file import ImageClassifier
 from utils.file_paths import FilePaths
 
 app = Flask(__name__)
@@ -40,7 +39,7 @@ def get_response(file_number: str) -> Any:
 @app.route('/upload', methods=['POST'])
 def upload_file() -> Any:
     """
-    Upload tif file to server.
+    Upload '.tif' file to server.
     :return: Page with result image
     """
     with counter.get_lock():
@@ -54,10 +53,9 @@ def upload_file() -> Any:
     file = request.files['file']
     filename = secure_filename(file.filename)
     filename = filename[:-4] + str(file_number) + ".tif"
-    print(filename)
     path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(path)
-    ImageClassifier.classify(path, file_number)
+    ImageClassifier().classify(path, file_number)
     return get_response(file_number)
 
 

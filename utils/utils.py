@@ -2,7 +2,8 @@ from PIL import Image
 from scipy import stats
 from osgeo import gdal
 from skimage import exposure
-from typing import List, Tuple
+from typing import (List,
+                    Tuple)
 
 import time
 import numpy as np
@@ -13,7 +14,7 @@ from utils.file_paths import FilePaths
 class Utils:
 
     @staticmethod
-    def save_result_as_jpg(file_number) -> None:
+    def save_colorized_tif_as_jpg(file_number) -> None:
         """
         Save '.tif' file as '.jpg'.
         """
@@ -83,7 +84,7 @@ class Utils:
     @staticmethod
     def get_objects_and_ids(segment_ids: np.ndarray,
                             segments: np.ndarray,
-                            image: np.ndarray) -> Tuple[List[List[np.uint8]], List[np.int64]]:
+                            image: np.ndarray) -> List[List[np.uint8]]:
         """
         Get additional information about each segment.
         :param segment_ids: list of segment id
@@ -92,12 +93,10 @@ class Utils:
         :return: tuple of objects with extra info and its id
         """
         objects = []
-        object_ids = []
 
         for segment_id in segment_ids:
             segment_pixels = image[segments == segment_id]
             object_features = Utils.get_segment_features(segment_pixels)
             objects.append(object_features)
-            object_ids.append(segment_id)
 
-        return objects, object_ids
+        return objects
