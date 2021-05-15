@@ -1,14 +1,13 @@
-from PIL import Image
-from scipy import stats
-from osgeo import gdal
-from skimage import exposure
-from typing import (List,
-                    Tuple)
-
 import time
-import numpy as np
+from typing import List, Tuple
 
-from utils.file_paths import FilePaths
+import gdal
+import numpy as np
+from PIL import Image
+from scipy.stats import stats
+from skimage.exposure import exposure
+
+from Backend.utils.file_paths import FilePaths
 
 
 class Utils:
@@ -18,9 +17,8 @@ class Utils:
         """
         Save '.tif' file as '.jpg'.
         """
-        result_path = FilePaths.result_path_with_color
+        result_path = FilePaths.RESULT_PATH_WITH_COLOR
         out_path = result_path + str(file_number) + ".jpg"
-        print(result_path)
         image = Image.open(result_path + str(file_number) + ".tif")
         image.thumbnail(image.size)
         rgb_image = image.convert('RGB')
@@ -81,22 +79,42 @@ class Utils:
         image = exposure.rescale_intensity(band_data)
         return image
 
+    storage = {}
+
+    @staticmethod
+    def get_progress(id: int) -> float:
+        """
+        Get progress
+        :param id: file id
+        :return: progress as float number from 0.0 to 100.0
+        """
+        return Utils.storage[id]
+
     @staticmethod
     def get_objects_and_ids(segment_ids: np.ndarray,
                             segments: np.ndarray,
-                            image: np.ndarray) -> List[List[np.uint8]]:
+                            image: np.ndarray,
+                            id: int) -> Tuple[List[List[np.uint8]], List[np.uint8]]:
         """
         Get additional information about each segment.
+        :param id: file id
         :param segment_ids: list of segment id
         :param segments: list of pixels in segment
         :param image: total list of pixels
         :return: tuple of objects with extra info and its id
         """
         objects = []
-
+        object_ids = []
+        i = 0
+        Utils.storage[id] = 0
         for segment_id in segment_ids:
+            if segment_id % 1000 == 0:
+                print(f"Progress for file with id = {id}: {Utils.storage[id]}%")
             segment_pixels = image[segments == segment_id]
             object_features = Utils.get_segment_features(segment_pixels)
             objects.append(object_features)
+            object_ids.append(segment_id)
+            i += 1
+            Utils.storage[id] = round(i / len(segment_ids) * 100, 3)
 
-        return objects
+        return objects, object_ids

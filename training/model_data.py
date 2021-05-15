@@ -1,15 +1,20 @@
-from osgeo import gdal
-import numpy as np
-import os
+from typing import Any
+
 import geopandas as gpd
+import numpy as np
 
 
-def save_to_shp_file(points, path):
-    start_part = "C:/temp/landsat/"
+def save_to_shp_file(points: Any, path: str) -> None:
+    """
+    Save points to shp file.
+    :param points: file with points
+    :param path: file path
+    """
+    start_part = "C:/temp2/"
     points.to_file(start_part + path)
 
 
-file_with_points = gpd.read_file('C:/Users/dmkal/Documents/truth_data.shp')
+file_with_points = gpd.read_file('C:/temp/truth_data.shp')
 class_names = file_with_points['lctype'].unique()
 
 print('class names:', class_names)
@@ -23,9 +28,9 @@ file_with_points['id'] = file_with_points['lctype'].map(dict(zip(class_names, cl
 print("\nPoint data with id:\n")
 print(file_with_points.head())
 
-train_points = file_with_points.sample(frac=0.7)
+train_points = file_with_points.sample(frac=0.9)
 
-# Difference between all points and train points
+# Difference between all points and train points.
 test_points = file_with_points.drop(train_points.index)
 print('\ntotal shape', file_with_points.shape,
       'training shape', train_points.shape,
